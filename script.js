@@ -11,7 +11,7 @@ async function analyze(mode) {
   resultBox.textContent = "Analyzing...";
 
   try {
-    const response = await fetch("https://your-backend-url.onrender.com/get-threat", {
+    const response = await fetch("https://scylink-threat-api.onrender.com/get-threat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
