@@ -1,34 +1,21 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from local_engine import get_threats_from_tara
+from llm_client import get_threat_scenario_from_llm
 
 app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# Allow frontend to access this backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Define input format
 class AssetInput(BaseModel):
     asset_name: str
+    use_ai: bool = False  # Toggle AI on or off
 
 @app.post("/get-threat")
 def get_threat(data: AssetInput):
-    asset = data.asset_name.strip().lower()
-    if asset == "tcu":
-        return {
-            "threats": [
-                {
-                    "category": "Spoofing",
-                    "description": "Attacker impersonates OEM cloud to inject malicious updates.",
-                    "mitigation": "Use mutual TLS; validate certificates.",
-                    "iso_clause": "Clause 15 – Risk Treatment"
-                }
-            ]
-        }
+    if data.use_ai:
+        scenario = get_threat_scenario_from_llm(data.asset_name)
+        return {"asset": data.asset_name, "source": "AI", "scenario": scenario}
     else:
-        return { "threats": [] }
+        threats = get_threats_from_tara(data.asset_name)
+        return {"asset": data.asset_name, "source": "TARA Library", "threats": threats}
